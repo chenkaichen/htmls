@@ -1,1 +1,220 @@
+# iOS端开发文档（Flutter 3.x  Dart 3.x）
 
+## 一、文档概述
+
+### 1.1 项目基础信息
+
+| 项目参数 | 详细说明 |
+|---------|---------|
+| 项目类型 | 全球版财务类移动端应用（主打越南地区上线运营） |
+| 技术栈 | Flutter 3.x + Dart 3.x（跨端开发，iOS端原生适配封装） |
+| 运行平台 | iOS 13.0 及以上版本 |
+| 上线范围 | 全球上架，重点适配越南地区（时区、语言、合规、支付、隐私政策） |
+| 开发目标 | 完成iOS端原生权限配置、第三方SDK集成、合规适配、打包归档、App Store上架适配，保障Flutter项目iOS端正常编译、运行、上线，符合苹果审核规范及越南地区运营合规要求 |
+
+### 1.2 文档目的
+本文档为iOS端开发执行标准，明确权限配置、第三方SDK集成规范、工程配置、合规要求、打包上线规则，兼容越南地区用户使用场景。
+
+---
+
+## 二、iOS工程基础配置需求
+
+### 2.1 工程基础适配
+- 编译环境：Xcode最新稳定版，适配最新iOS SDK，支持Flutter 3.x编译特性，无编译报错、警告级异常
+- 最低适配版本：iOS 13.0，兼容主流iPhone，无适配黑屏、闪退、布局错乱问题
+- 架构支持：支持arm64、x86_64架构，适配真机调试、模拟器调试、Release正式打包
+- 国际化配置：默认支持越南语，适配越南时区、地区格式，App Store后台地区选择全球，重点勾选越南区域
+
+### 2.2 项目基础信息配置
+- 配置完整的Bundle ID、版本号、构建号，严格遵循迭代版本升级规则
+- 配置App图标、启动页
+- 配置ATS权限，适配全球网络请求，支持HTTPS请求，兼容越南地区网络环境
+
+---
+
+## 三、iOS端权限配置需求（必做）
+项目需配置以下所有系统权限，**必须在Info.plist中添加对应权限描述文案（越南语）**，无权限描述会直接导致App Store审核拒绝；权限弹窗时机遵循「按需弹窗」原则，用户触发对应功能后再弹出授权请求，禁止启动页一次性弹窗所有权限。
+
+**所需权限列表**
+- 相机权限
+- 照片相册权限
+- 联系人权限
+- 定位权限
+- IDFA追踪权限
+
+### 3.1 权限通用规则
+- 所有权限文案必须贴合财务业务场景，禁止通用模糊文案，避免苹果审核驳回
+- 权限拒绝后做好异常兼容，弹窗提示用户前往设置开启权限，不闪退、不功能卡死
+- IDFA权限严格遵循iOS 14+ ATT框架规范，首次启动弹窗授权，用户可自主允许/拒绝，拒绝后不影响核心功能使用
+
+---
+
+## 四、业务需求
+
+### 4.1 登录功能
+需要支持两种登录方式：手机号+验证码、Apple第三方登录
+
+#### 4.1.1 手机号+验证码
+登录成功返回用户信息（userId、token）
+
+#### 4.1.2 第三方登录（Apple）
+登录成功返回用户信息（userId、token）
+
+### 4.2 用户数据逻辑
+用户登录后，新增的数据存于本地（isar），行为数据与当前用户绑定，**根据 userId 区分多用户数据隔离**。
+
+---
+
+## 五、第三方SDK集成需求
+所有SDK基于CocoaPods集成，适配Flutter 3.x原生混编，保证SDK版本兼容、无冲突，编译正常，功能可正常调用，无崩溃、无日志报错。
+
+### 5.1 必集成SDK列表及配置规范
+
+#### 5.1.1 adjust_sdk（归因统计SDK）
+- 功能：用户行为归因、渠道统计、留存统计、全球用户数据统计，适配越南地区数据上报
+- 配置：开启后台数据上报，适配海外网络
+- 兼容：适配IDFA授权逻辑，用户授权后正常上报设备数据，未授权则静默兼容、不报错
+
+#### 5.1.2 app_tracking_transparency（ATT授权框架）
+- 功能：iOS 14+ IDFA用户授权弹窗管理，适配苹果隐私合规政策
+- 配置：按需触发ATT授权弹窗，不启动强制弹窗
+- 合规：不强制授权，拒绝授权不阻塞APP核心流程
+
+#### 5.1.3 freshchat_sdk（在线客服SDK）
+- 功能：用户在线客服咨询、财务问题答疑、工单反馈
+- 配置：适配越南语客服界面，支持图片、文字消息发送
+- 兼容：适配暗黑模式、全尺寸设备，无界面适配问题
+
+#### 5.1.4 sign_in_with_apple（苹果登录SDK）
+- 功能：苹果账号一键登录、注册，适配海外用户登录场景
+- 配置：开启Xcode Sign In with Apple能力，配置开发者账号权限
+- 合规：符合苹果海外APP上架审核规范
+
+#### 5.1.5 isar（本地数据库）
+- 功能：用户行为数据本地持久化，多用户数据隔离
+- 数据区分：严格根据 userId 隔离数据
+- 模型参考：[model示例](#model-example)
+
+### 5.2 SDK通用开发规范
+- 所有SDK仅集成iOS端所需依赖，无冗余缺失，Podfile可正常 install / update
+- 所有SDK异步初始化，不阻塞APP启动流程
+- 数据上报遵循海外隐私合规，不上报敏感财务信息
+
+---
+
+## 六、合规适配需求（全球+越南地区）
+
+### 6.1 苹果App Store合规
+- 隐私政策：配置越南语隐私政策、用户协议，公网链接可正常访问
+- 数据采集：所有数据采集均为用户可感知业务场景，无静默采集
+- IDFA合规：完整ATT授权流程，审核资料如实填报
+
+### 6.2 越南地区专项适配
+- 语言适配：系统弹窗、权限描述、客服界面全套越南语
+- 网络适配：优化海外超时、节点适配，适配越南网络环境
+- 风控适配：符合越南金融类APP基础合规规则
+
+---
+
+## 七、功能兼容与异常处理需求
+- 容错机制：权限调用、SDK回调、原生跳转全部做好异常捕获，杜绝闪退、卡死、黑屏
+- 版本兼容：iOS 13.0+ 全版本稳定适配
+- 桥接通信：Flutter &amp; 原生 MethodChannel 双向通信稳定，回调不丢失、不延迟
+
+---
+
+## 八、打包与上线需求
+- Debug：支持真机/模拟器调试，日志正常输出
+- AdHoc：测试包可正常安装、全功能可用
+- Release：可正常归档打出 App Store 正式上架包
+- 证书：适配开发/测试/发布证书与描述文件
+- 审核适配：符合最新苹果审核规则，财务功能描述合规
+
+---
+
+## 九、交付标准
+开发完成需全部满足：
+1. 工程编译无报错、无严重警告，Flutter3.x / Dart3.x 运行稳定
+2. 全部权限配置完整，越南语权限文案合规，弹窗逻辑正常
+3. 所有SDK集成成功、初始化正常、无报错日志
+4. 全设备适配无闪退、无UI、无功能BUG
+5. 测试包、正式包可正常构建，满足提审条件
+6. 原生与Flutter通信通畅，所有业务回调正常落地
+
+---
+<a id="model-example"></a>
+## 十、model示例
+```dart
+class MoneyMomentModel {
+  MoneyMomentModel();
+
+  Id isarId = Isar.autoIncrement;
+
+  @Index(unique: true)
+  late String id;
+
+  @Index()
+  late String userId;
+
+  @enumerated
+  late MoneyMomentCategory category;
+
+  late double amount;
+
+  @Index()
+  late DateTime occurredAt;
+
+  String? location;
+
+  late String emotionalNote;
+
+  String? photoBase64;
+
+  String? contactId;
+
+  String? contactName;
+
+  @enumerated
+  late EmotionalSentiment sentiment;
+
+  late DateTime createdAt;
+
+  late DateTime updatedAt;
+
+  /// Entity -> Model
+  factory MoneyMomentModel.fromEntity(MoneyMoment e) {
+    return MoneyMomentModel()
+      ..id = e.id
+      ..userId = e.userId
+      ..category = e.category
+      ..amount = e.amount
+      ..occurredAt = e.occurredAt
+      ..location = e.location
+      ..emotionalNote = e.emotionalNote
+      ..photoBase64 = e.photoBase64
+      ..contactId = e.contactId
+      ..contactName = e.contactName
+      ..sentiment = e.sentiment
+      ..createdAt = e.createdAt
+      ..updatedAt = e.updatedAt;
+  }
+
+  /// Model -> Entity
+  MoneyMoment toEntity() {
+    return MoneyMoment(
+      id: id,
+      userId: userId,
+      category: category,
+      amount: amount,
+      occurredAt: occurredAt,
+      location: location,
+      emotionalNote: emotionalNote,
+      photoBase64: photoBase64,
+      contactId: contactId,
+      contactName: contactName,
+      sentiment: sentiment,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+}
