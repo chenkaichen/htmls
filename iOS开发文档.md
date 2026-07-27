@@ -96,6 +96,7 @@
 - 功能：用户在线客服咨询、财务问题答疑、工单反馈
 - 配置：适配越南语客服界面，支持图片、文字消息发送
 - 兼容：适配暗黑模式、全尺寸设备，无界面适配问题
+- 要求：分为游客和用户拉起客服界面，用户登录需要调用loginUser方法，退出登录需要调用logout方法。详情见[示例](#freshchat-example)
 
 #### 5.1.4 sign_in_with_apple（苹果登录SDK）
 - 功能：苹果账号一键登录、注册，适配海外用户登录场景
@@ -231,3 +232,178 @@ class MoneyMomentModel {
     );
   }
 }
+
+<a id="freshchat-example"></a>
+## 十一、在线客服示例
+```dart
+class FreshchatService {
+  static final FreshchatService _instance = FreshchatService._internal();
+  factory FreshchatService() => _instance;
+  FreshchatService._internal();
+
+  bool _isInitialized = false;
+  bool _userSynced = false; // 是否已同步用户信息
+
+  Completer<void>? _initCompleter;
+
+  static const String conversationTag = 'vn_session';
+
+  /// 初始化 Freshchat SDK
+  Future<void> init() async {
+    if (_isInitialized) {
+      debugPrint('Freshchat already initialized');
+      return;
+    }
+
+    if (_initCompleter != null) {
+      debugPrint('Freshchat initialization waiting...');
+      return _initCompleter!.future;
+    }
+
+    _initCompleter = Completer<void>();
+
+    try {
+      debugPrint('Initializing Freshchat...');
+
+      Freshchat.init(
+        FreshchatConfig.appId,
+        FreshchatConfig.appKey,
+        FreshchatConfig.domain,
+        teamMemberInfoVisible: FreshchatConfig.teamMemberInfoVisible,
+        cameraCaptureEnabled: FreshchatConfig.cameraCaptureEnabled,
+        gallerySelectionEnabled: FreshchatConfig.gallerySelectionEnabled,
+      );
+
+      _isInitialized = true;
+
+      _initCompleter!.complete();
+
+      debugPrint('Freshchat initialized successfully');
+    } catch (e, stack) {
+      debugPrint('Freshchat init error: $e');
+
+      debugPrintStack(stackTrace: stack);
+
+      _initCompleter!.completeError(e);
+
+      _isInitialized = false;
+
+      CustomSnackbar.error('Không thể mở hỗ trợ khách hàng');
+
+      rethrow;
+    } finally {
+      _initCompleter = null;
+    }
+  }
+
+  /// 设置 Freshchat 用户
+  Future<void> _setUserIfNeeded() async {
+    try {
+      if (_userSynced) {
+        debugPrint('Freshchat user already synced');
+
+        return;
+      }
+
+      final userId = StorageService().getUserId();
+      final phone = StorageService().getPhone();
+      final email = StorageService().getEmail();
+      debugPrint(
+        'userId-------$userId, phone-------$phone, email-------$email',
+      );
+
+      if (userId.isEmpty || (phone.isEmpty && email.isEmpty)) {
+        debugPrint('Missing user info, skip Freshchat user setup');
+
+        return;
+      }
+
+      final platform = Platform.isIOS ? 'IOS' : 'Android';
+
+      final displayName =
+          '${FreshchatConfig.displayNamePrefix}-$platform-${phone.isNotEmpty ? '0$phone' : email}';
+
+      final freshchatUser = FreshchatUser(userId, 'restore_$userId');
+
+      freshchatUser.setFirstName(displayName);
+
+      if (phone.isNotEmpty) {
+        freshchatUser.setPhone('+84', phone);
+      }
+
+      if (email.isNotEmpty) {
+        freshchatUser.setEmail(email);
+      }
+
+      Freshchat.setUser(freshchatUser);
+
+      Freshchat.setUserProperties({
+        'user_id': userId.toString(),
+        'platform': platform,
+        'country': 'Vietnam',
+        if (phone.isNotEmpty) 'phone': phone,
+        if (email.isNotEmpty) 'email': email,
+      });
+
+      _userSynced = true;
+
+      debugPrint('Freshchat user synced: $displayName');
+    } catch (e, stack) {
+      debugPrint('Freshchat set user error: $e');
+
+      debugPrintStack(stackTrace: stack);
+    }
+  }
+
+  /// 打开客服聊天页面
+  Future<void> showConversations() async {
+    try {
+      if (!_isInitialized) {
+        await init();
+      }
+
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      Freshchat.showConversations(
+        filteredViewTitle: conversationTag,
+        tags: [conversationTag],
+      );
+
+      debugPrint('Freshchat opened');
+    } catch (e, stack) {
+      debugPrint('Show Freshchat error: $e');
+      debugPrintStack(stackTrace: stack);
+      CustomSnackbar.error('Không thể mở hỗ trợ khách hàng');
+    }
+  }
+
+  /// 登录后主动同步用户信息
+  Future<void> loginUser() async {
+    if (!_isInitialized) {
+      await init();
+    }
+    await _setUserIfNeeded();
+  }
+
+  /// 用户退出登录
+  Future<void> logout() async {
+    try {
+      if (!_isInitialized) {
+        return;
+      }
+      Freshchat.resetUser();
+      _userSynced = false;
+      debugPrint('Freshchat logout success');
+    } catch (e) {
+      debugPrint('Freshchat logout error: $e');
+    }
+  }
+
+  /// 销毁
+  void dispose() {
+    _isInitialized = false;
+    _userSynced = false;
+    _initCompleter = null;
+  }
+}
+```
