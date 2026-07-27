@@ -232,6 +232,7 @@ class MoneyMomentModel {
     );
   }
 }
+```
 
 <a id="freshchat-example"></a>
 ## 十一、在线客服示例
