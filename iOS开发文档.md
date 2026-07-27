@@ -95,7 +95,6 @@
 #### 5.1.3 freshchat_sdk（在线客服SDK）
 - 功能：用户在线客服咨询、财务问题答疑、工单反馈
 - 配置：适配越南语客服界面，支持图片、文字消息发送
-- 兼容：适配暗黑模式、全尺寸设备，无界面适配问题
 - 要求：分为游客和用户拉起客服界面，用户登录需要调用loginUser方法，退出登录需要调用logout方法。详情见[示例](#freshchat-example)
 
 #### 5.1.4 sign_in_with_apple（苹果登录SDK）
@@ -267,12 +266,12 @@ class FreshchatService {
       debugPrint('Initializing Freshchat...');
 
       Freshchat.init(
-        FreshchatConfig.appId,
-        FreshchatConfig.appKey,
-        FreshchatConfig.domain,
-        teamMemberInfoVisible: FreshchatConfig.teamMemberInfoVisible,
-        cameraCaptureEnabled: FreshchatConfig.cameraCaptureEnabled,
-        gallerySelectionEnabled: FreshchatConfig.gallerySelectionEnabled,
+        'cb1dffb1-b412-41b0-8146-3ffbc7a08353',
+        'ef7a62f4-2152-4bab-a2b6-0d1ff0a064e2',
+        'msdk.freshchat.com',
+        teamMemberInfoVisible: true,
+        cameraCaptureEnabled: true,
+        gallerySelectionEnabled: true,
       );
 
       _isInitialized = true;
@@ -322,7 +321,7 @@ class FreshchatService {
       final platform = Platform.isIOS ? 'IOS' : 'Android';
 
       final displayName =
-          '${FreshchatConfig.displayNamePrefix}-$platform-${phone.isNotEmpty ? '0$phone' : email}';
+          '${AppPublicConstants.appName}-$platform-${phone.isNotEmpty ? '0$phone' : email}';
 
       final freshchatUser = FreshchatUser(userId, 'restore_$userId');
 
@@ -339,7 +338,7 @@ class FreshchatService {
       Freshchat.setUser(freshchatUser);
 
       Freshchat.setUserProperties({
-        'user_id': userId.toString(),
+        'user_id': userId,
         'platform': platform,
         'country': 'Vietnam',
         if (phone.isNotEmpty) 'phone': phone,
