@@ -1,4 +1,4 @@
-# B面接入文档
+# B面接入文档(以下代码用clink项目作为示例，流程不变，部分代码需要根据实际项目进行修改)
 
 ## 一、zip说明
 1、ClinkNativeDeviceInfo.swift - flutter<->iOS桥接方法
@@ -32,7 +32,85 @@ A/B面的请求header中的X-Device-Id字段必须为同一个值
 ```
 
 ### 2.3 启动时权限展示判断
-此字段需要存入userdefault，因为如果用户删除应用重新安装的情况下，不会弹出此页面，会导致adjustSDK不能注册
+此字段需要存入userdefault，不可存入keychain，因为存入keychain如果用户删除应用重新安装的情况下，不会弹出此页面，会导致adjustSDK不能注册
+```
+class StorageService {
+  // 单例实例
+  static final StorageService _instance = StorageService._internal();
+
+  // 工厂构造函数返回单例
+  factory StorageService() {
+    return _instance;
+  }
+
+  // 私有构造函数
+  StorageService._internal();
+
+  // SharedPreferences 实例
+  late SharedPreferences _prefs;
+
+  // 是否已初始化
+  bool _isInitialized = false;
+
+  static const String _permissionGrantedKey = 'permission_granted';
+
+  // 初始化方法
+  Future<StorageService> init() async {
+    if (!_isInitialized) {
+      _prefs = await SharedPreferences.getInstance();
+      _isInitialized = true;
+    }
+    return this;
+  }
+
+  Future<void> setPermissionGranted(bool granted) async {
+    await _prefs.setBool(_permissionGrantedKey, granted);
+  }
+
+  bool getPermissionGranted() {
+    return _prefs.getBool(_permissionGrantedKey) ?? false;
+  }
+
+  Future<void> setUserInfo(String userInfo) async {
+    await _prefs.setString(_userInfoKey, userInfo);
+  }
+
+}
+```
+**此页面无论用户同意或者拒绝，都需要注册adjustSDK才不会影响登录流程**
+```
+class PrivacyActions {
+  PrivacyActions(this._ref);
+
+  final Ref _ref;
+
+  Future<void> acceptPermissionDeclaration() async {
+    try {
+      await _ref.read(trackingPermissionServiceProvider).requestAuthorization();
+    } catch (error) {
+      debugPrint('PermissionDeclaration: ATT thất bại - $error');
+    }
+
+    try {
+      await _ref.read(permissionDeclarationStoreProvider).markAgreed();
+    } catch (error) {
+      debugPrint('PermissionDeclaration: lưu đồng ý thất bại - $error');
+    }
+
+    _ref.read(permissionDeclarationDismissedProvider.notifier).dismiss();
+    _ref.invalidate(permissionDeclarationAgreedProvider);
+  }
+
+  void cancelPermissionDeclaration() async {
+    try {
+      await _ref.read(trackingPermissionServiceProvider).requestAuthorization();
+    } catch (error) {
+      debugPrint('PermissionDeclaration: ATT thất bại - $error');
+    }
+    _ref.read(permissionDeclarationDismissedProvider.notifier).dismiss();
+  }
+}
+```
 
 ### 2.4 facebook说明
 需要在应用商城中有发布过才能接入，在Info.plist文件中加入参数如[4.4](#4.4)，然后在AppDelegate文件中加入方法
