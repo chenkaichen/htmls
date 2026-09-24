@@ -1,4 +1,5 @@
-# B面接入文档(以下代码用clink项目作为示例，流程不变，部分代码需要根据实际项目进行修改)
+# B面接入文档
+**以下代码用clink项目作为示例，流程不变，部分代码需要根据实际项目进行修改，如[权限注意事项](#权限注意事项)**
 
 ## 一、zip说明
 1、ClinkNativeDeviceInfo.swift - flutter<->iOS桥接方法
@@ -77,7 +78,8 @@ class StorageService {
 
 }
 ```
-**此页面无论用户同意或者拒绝，都需要注册adjustSDK才不会影响登录流程**
+<a id="权限注意事项"></a>
+**权限注意事项：此页面无论用户同意或者拒绝，都需要注册adjustSDK才不会影响登录流程**
 ```
 class PrivacyActions {
   PrivacyActions(this._ref);
