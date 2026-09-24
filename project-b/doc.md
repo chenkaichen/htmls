@@ -3,7 +3,7 @@
 ## 一、zip说明
 1、ClinkNativeDeviceInfo.swift - flutter<->iOS桥接方法
 
-2、Constant.swift - appList
+2、Constant.swift - appList **与[4.4](#4.4)中的scheme相对应**
 
 3、SecurityManager.swift - 安全
 
