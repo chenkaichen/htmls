@@ -22,6 +22,14 @@ A/B面的请求header中的X-Device-Id字段必须为同一个值
 ### 2.3 启动时权限展示判断
 此字段需要存入userdefault，因为如果用户删除应用重新安装的情况下，不会弹出此页面，会导致adjustSDK不能注册
 
+### 2.4 facebook说明
+需要在应用商城中有发布过才能接入，在Info.plist文件中加入参数如[4.4](#4.4)，然后在AppDelegate文件中加入方法
+```
+        ApplicationDelegate.shared.application(
+            application,
+            didFinishLaunchingWithOptions: launchOptions
+        )  
+```
 ## 三、B面需要修改
 
 ### 3.1 客服
@@ -135,6 +143,7 @@ end
     }
 ```
 
+<a id="4.4"></a>
 ### 4.4 Info.plist文件新增
 ```
 	<key>LSApplicationQueriesSchemes</key>
