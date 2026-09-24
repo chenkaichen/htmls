@@ -2,10 +2,14 @@
 
 ## 一、zip说明
 1、ClinkNativeDeviceInfo.swift - flutter<->iOS桥接方法
+
 2、Constant.swift - appList
+
 3、SecurityManager.swift - 安全
+
 4、robov - B面
-** 4放入flutter项目lib文件夹下，123放入iOS工程中
+
+**4放入flutter项目lib文件夹下，123放入iOS工程中**
 
 ## 二、注意事项
 
