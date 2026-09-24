@@ -1,5 +1,5 @@
 # B面接入文档
-**以下代码用clink项目作为示例，流程不变，部分代码需要根据实际项目进行修改，如[权限注意事项](#权限注意事项)**
+**以下代码用clink项目作为示例，流程不变，部分代码需要根据实际项目进行修改，如[权限注意事项](#权限注意事项)、[退出登录](#退出登录)、[打开客服](#打开客服)**
 
 ## 一、zip说明
 1、ClinkNativeDeviceInfo.swift - flutter<->iOS桥接方法
@@ -16,6 +16,82 @@
 
 ### 2.1 A/B面判断
 登录接口返回的userGroup字段 0->B else->A
+```
+import 'account.dart';
+
+enum AuthMethod { phoneOtp, apple }
+
+class AuthSession {
+  const AuthSession({
+    required this.userId,
+    required this.userGroup,
+    required this.token,
+    required this.method,
+    required this.createdAt,
+    this.phone,
+    this.email,
+  });
+
+  final String userId;
+  final String userGroup;
+  final String token;
+  final AuthMethod method;
+  final DateTime createdAt;
+  final String? phone;
+  final String? email;
+
+  Account get account => Account(
+    uid: userId,
+    email: email,
+    isEmailVerified: email != null && email!.isNotEmpty,
+  );
+
+  Map<String, Object?> toJson() => {
+    'userId': userId,
+    'userGroup': userGroup,
+    'token': token,
+    'method': method.name,
+    'createdAt': createdAt.toIso8601String(),
+    'phone': phone,
+    'email': email,
+  };
+
+  static AuthSession? fromJson(Map<String, Object?> json) {
+    final userId = json['userId'];
+    final userGroup = json['userGroup'];
+    final token = json['token'];
+    final methodName = json['method'];
+    final createdAtText = json['createdAt'];
+    if (userId is! String ||
+        userId.isEmpty ||
+        userGroup is! String ||
+        userGroup.isEmpty ||
+        token is! String ||
+        token.isEmpty ||
+        methodName is! String ||
+        createdAtText is! String) {
+      return null;
+    }
+
+    AuthMethod? method;
+    for (final value in AuthMethod.values) {
+      if (value.name == methodName) method = value;
+    }
+    final createdAt = DateTime.tryParse(createdAtText);
+    if (method == null || createdAt == null) return null;
+
+    return AuthSession(
+      userId: userId,
+      userGroup: userGroup,
+      token: token,
+      method: method,
+      createdAt: createdAt,
+      phone: json['phone'] as String?,
+      email: json['email'] as String?,
+    );
+  }
+}
+```
 
 ### 2.2 X-Device-Id字段
 A/B面的请求header中的X-Device-Id字段必须为同一个值
@@ -155,6 +231,7 @@ class PrivacyActions {
 
 ### 3.2 webview_controller需要修改
 
+<a id="退出登录"></a>
 #### 3.2.1 退出登录
 需要跟A面一致，跳转至登录页面
 ```
@@ -163,8 +240,9 @@ class PrivacyActions {
   }
 ```
 
+<a id="打开客服"></a>
 #### 3.2.1 打开客服
-需要直接跳转聊天页面，非列表
+需要直接跳转聊天页面，非列表  **注意：A面保持不变**
 ```
   Future<void> _handleOpenCustomerService(Map<String, dynamic>? params) async {
    
