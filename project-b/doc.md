@@ -198,6 +198,68 @@ class PrivacyActions {
             didFinishLaunchingWithOptions: launchOptions
         )  
 ```
+
+### 2.5 需要接入接口
+作用：用来判断展示的登录方式（手机号、第三方登录）
+
+接口名（无需参数）
+```
+  static const String startFirst = '/start';
+```
+响应数据
+```
+class StartModel {
+  String? appMark;
+  String? name;
+  String? icon;
+  String? email;
+  String? servicePhone;
+  String? aboutContent;
+  String? privacyUrl;
+  String? mainLoginMode;
+  List<dynamic>? otherLoginMode;
+  bool? phoneLoginEnabled;
+
+  StartModel({
+    this.appMark,
+    this.name,
+    this.icon,
+    this.email,
+    this.servicePhone,
+    this.aboutContent,
+    this.privacyUrl,
+    this.mainLoginMode,
+    this.otherLoginMode,
+    this.phoneLoginEnabled,
+  });
+
+  factory StartModel.fromJson(Map<String, dynamic> json) {
+    return StartModel(
+      appMark: json['appMark'],
+      name: json['name'],
+      icon: json['icon'],
+      email: json['email'],
+      servicePhone: json['servicePhone'],
+      aboutContent: json['aboutContent'],
+      privacyUrl: json['privacyUrl'],
+      mainLoginMode: json['mainLoginMode'],
+      otherLoginMode: json['otherLoginMode'],
+      phoneLoginEnabled: json['phoneLoginEnabled'],
+    );
+  }
+}
+```
+判断方式（isPhoneLoginEnabled == true 展示手机号登录）（isHaveOther == true 展示苹果登录)
+```
+    final isPhoneLoginEnabled =
+        (_startModel?.phoneLoginEnabled == null ||
+        _startModel?.phoneLoginEnabled! == true);
+
+    final otherLoginMode = _startModel?.otherLoginMode ?? [];
+    final isHaveOther = otherLoginMode.isNotEmpty;
+
+```
+
 ## 三、B面需要修改
 
 ### 3.1 客服
