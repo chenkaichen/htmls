@@ -18,6 +18,18 @@
 
 ### 2.2 X-Device-Id字段
 A/B面的请求header中的X-Device-Id字段必须为同一个值
+```
+  Future<String> _getDeviceIdFromNative() async {
+    const deviceChannel = MethodChannel('flutter_native_channel');
+
+    final result = await deviceChannel.invokeMethod<Map<dynamic, dynamic>>(
+      'getDeviceInfo',
+    );
+    final map = Map<String, dynamic>.from(result ?? {});
+
+    return map['mobDeviceId'] ?? '';
+  }
+```
 
 ### 2.3 启动时权限展示判断
 此字段需要存入userdefault，因为如果用户删除应用重新安装的情况下，不会弹出此页面，会导致adjustSDK不能注册
@@ -105,7 +117,7 @@ isSingleOpen == true 跳转聊天界面，默认为false不影响A面
 ## 四、外壳需要修改
 
 ### 4.1 新增文件
-把zip解压的一下三个文件copy到项目中
+把zip解压的以下三个文件copy到项目中
 ```
 ClinkNativeDeviceInfo.swift
 Constant.swift
