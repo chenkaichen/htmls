@@ -1,8 +1,11 @@
 # B面接入文档
 
-## 一、接入说明
-
-b面代码将会打包为zip放在根文件夹下，直接解压放入项目lib文件夹下，以下为注意事项及需要修改的地方。
+## 一、zip说明
+1、ClinkNativeDeviceInfo.swift - flutter<->iOS桥接方法
+2、Constant.swift - appList
+3、SecurityManager.swift - 安全
+4、robov - B面
+** 4放入flutter项目lib文件夹下，123放入iOS工程中
 
 ## 二、注意事项
 
